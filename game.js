@@ -11,14 +11,31 @@
 			game.load.image('fireblob','images/fireblob.png');
 		},
 		create : function(){
+			this.formerMouse=-1; // Phaser.Mouse.NO_BUTTON
+
 			game.world.setBounds(0,0,game.world.width,game.world.height);
 			game.physics.startSystem(Phaser.Physics.P2JS);
-  			game.physics.p2.gravity.y = 1
+			game.physics.p2.setImpactEvents(true);
+  			game.physics.p2.gravity.y = 0;
+  			game.physics.p2.restitution = 0.8;
+  			this.particleCollisionGroup=game.physics.p2.createCollisionGroup();
+  			this.pointerCG=game.physics.p2.createCollisionGroup();
+  			game.physics.p2.updateBoundsCollisionGroup();
+
   			this.bg=game.add.image(0,0,'space');
 
   			this.pointer=game.add.sprite(game.world.centerX,game.world.centerY,'pointer');
   			game.physics.p2.enable(this.pointer,false);
   			this.pointer.scale.setTo(0.5);
+
+			this.particleGroup=game.add.group(game,null,"particleGroup",true,true,Phaser.Physics.P2JS);
+			
+			this.particleGroup.createMultiple(10,'dark-blue-dot');
+			this.particleGroup.setAll('checkWorldBounds',true);
+			// this.particleGroup.setAll('outOfBoundsKill',true);
+			this.pointer.body.setCollisionGroup(this.pointerCG);
+  			// this.pointer.body.collides(this.particleCollisionGroup,this.particlePointCollisionHandler,this);
+
 
   			this.emitter = game.add.emitter(this.pointer.x,this.pointer.y, 9000);
  			this.emitter.makeParticles('fireblob');
@@ -29,24 +46,12 @@
   			this.emitter.lifespan = 500;
 
   			// this.halo=Phaser.Circle(this.pointer.x,this.pointer.y,50);
-  			this.createParticles();
-			// this.emitter.maxParticleSpeed = new Phaser.Point(-100,50);
-			// this.emitter.minParticleSpeed = new Phaser.Point(-200,50);
-  			// this.pointer=Phaser.Pointer(game,1);
-  			// this.pointer.circle();
 
-			// game.physics.p2.enable(this.spaceShip, false);
-
-			// game.physics.enable(this.spaceShip,Phaser.Physics.ARCADE);
-
-			// this.spaceShip.body.collideWorldBounds=true;
-
-			// this.upKey=game.input.keyboard.addKey(Phaser.Keyboard.W);
-			// this.leftKey=game.input.keyboard.addKey(Phaser.Keyboard.A);
-			// this.rightKey=game.input.keyboard.addKey(Phaser.Keyboard.D);
-			// this.downKey=game.input.keyboard.addKey(Phaser.Keyboard.S);
-			// this.alienGenerator=game.time.events.loop(Phaser.Timer.SECOND*1.25,this.launchEnemy,this);
-			// this.alienGenerator.timer.start();
+  			this.collectedParticles=game.add.group();
+  			this.collectedParticles.enableBody=true;
+  			game.physics.p2.enable(this.collectedParticles,false);
+  			
+			this.createParticles();
 		},
 		update : function(){
 			if(game.physics.arcade.distanceToPointer(this.pointer, game.input.activePointer) > 30){
@@ -56,39 +61,42 @@
 				this.pointer.body.velocity.x=0;
 				this.pointer.body.velocity.y=0;
 			}
-			if(game.input.activePointer.isDown){
-				// this.emitter.angle=this.pointer.body.angle-180;
+			if(game.input.mouse.button!=-1 && game.input.mouse.button==0){
+				//Phaser.Mouse.LEFT_CLICK
 				this.emitter.emitParticle();
-
 			}
-			
-			// this.pointer.x=game.input.mousePointer.x;
-			// this.pointer.y=game.input.mousePointer.y;
-			// this.spaceShip.body.velocity.x=0;
-			// this.spaceShip.body.velocity.y=0;.
-			// if(this.leftKey.isDown){
-			// 	this.spaceShip.body.velocity.x=-this.SPACESHIP_VELOCITY;
-			// }
-			// if(this.rightKey.isDown){
-			// 	this.spaceShip.body.velocity.x=this.SPACESHIP_VELOCITY;
-			// }
-			// if(this.upKey.isDown){
-			// 	this.spaceShip.body.velocity.y=-this.SPACESHIP_VELOCITY;
-			// }
-			// if(this.downKey.isDown){
-			// 	this.spaceShip.body.velocity.y=this.SPACESHIP_VELOCITY;
-			// }
-			// //for spaceship() rotation
-			// this.rotate();
-
-			// //shoot bullets on mouse click
-			// if(game.input.activePointer.isDown){
-			// 	this.shootBullets();
-			// }
-			// this.updateEnemyShip();
+			if(game.input.mouse.button!=-1 && game.input.mouse.button==2){
+				//Phaser.Mouse.RIGHT_CLICK
+			}
+			if(game.input.mouse.button!=-1 && game.input.mouse.button==1){
+				//Phaser.Mouse.MIDDLE_CLICK
+				this.collectParticles();
+			}
+			// game.physics.
 		},
-		collectParticles:function(){
+		collectParticles:function(){	
+			var mousePoint=new Phaser.Point(this.pointer.x,this.pointer.y);
 
+			for(var i=0;i<10;i++){
+				var singleParticle=this.particleGroup.getAt(game.rnd.integerInRange(0,this.particleGroup.length-1));
+				if(singleParticle){
+					var particlePoint=new Phaser.Point(singleParticle.x,singleParticle.y);
+					var angle=Phaser.Point.angle(mousePoint,particlePoint);
+					singleParticle.angle=angle;
+					// singleParticle.body.angularVelocity=25;
+					console.log(Math.cos(angle),Math.sin(angle));
+					singleParticle.body.velocity.x=2*singleParticle.body.velocity.x * Math.cos(angle);
+					singleParticle.body.velocity.y=2*singleParticle.body.velocity.y * Math.sin(angle);
+					// console.log(singleParticle.body.velocity.x,singleParticle.body.velocity.y,angle);
+					// singleParticle.body.acceleration.x=100*Math.cos(angle);
+					// singleParticle.body.acceleration.y=100*Math.sin(angle);
+				}
+			}
+		},
+		particlePointCollisionHandler:function(pointer,particle){
+				// this.collectedParticles.add(particle);
+				// this.particleGroup.remove(particle);
+				// console.log(this.collectedParticles.length);
 		},
 		render:function(){
 			// game.debug.cameraInfo(game.camera, 500, 32);
@@ -96,28 +104,22 @@
    			// game.debug.geom(this.halo,#fff,true);
 		},
 		createParticles:function(){
-			this.particleGroup=game.add.group();
-			this.particleGroup.enableBody=true;
-			game.physics.p2.enable(this.particleGroup,false);
-			this.particleCollisionGroup=game.physics.p2.createCollisionGroup();
-			this.particleGroup.createMultiple(500,'dark-blue-dot');
-			this.particleGroup.setAll('checkWorldBounds',true);
-			// this.particleGroup.setAll('outOfBoundsKill',true);
 
 			for(var i=0;i<this.particleGroup.length;i++){
 				var singleParticle=this.particleGroup.getFirstExists(false);
 				if(singleParticle){
-					singleParticle.scale.setTo(0.5);
+					// singleParticle.scale.setTo(0.5);
 					singleParticle.reset(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,game.height));
+					game.physics.p2.enable(singleParticle, false);
 					singleParticle.body.velocity.x=game.rnd.integerInRange(-5,5);
 					singleParticle.body.velocity.y=game.rnd.integerInRange(-5,5);
-					game.physics.p2.enable(singleParticle, false);
+					// singleParticle.body.bounce.setTo(1);
+					// singleParticle.physicsBodyType=Phaser.Physics.P2JS;
 					singleParticle.body.collideWorldBounds=true;
-					singleParticle.body.bounce.setTo(1,1);
-
-					// singleParticle.body.acceleration.x=2;
-					// singleParticle.body.acceleration.y=2;
-					// singleParticle.setCollisionGroup(this.particleCollisionGroup);	
+					// singleParticle.body.collides(enemyGroup,dieEnemy,this);
+					singleParticle.body.setCollisionGroup(this.particleCollisionGroup);	
+					singleParticle.body.collides(this.particleCollisionGroup);
+					singleParticle.body.collides(this.pointerCG,this.particlePointCollisionHandler(),singleParticle);
 				}
 			}
 		},

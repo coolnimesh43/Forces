@@ -186,32 +186,87 @@
 	};
 	var homeState={
 		preload : function(){
-			game.load.image('start','images/space.jpg');
-			game.load.image('gameTitle','images/game_title.png')
-			game.load.image('spaceCraft','images/blue_craft.png')
+			game.load.image('start','images/sunflower.jpg');
+			game.load.audio('startTrack','audio/happy.mp3');
+			game.load.image('startButton','images/start.png');
+			game.load.image('howToButton','images/how-to.png');
+			game.load.image('highScoreButton','images/highscore.png');
+			game.load.image('cross','images/cross.png');
 		},
 		create : function(){
 			// game.stage.backgroundColor='#cccccc';
 			this.bg=game.add.image(game.world.centerX, game.world.centerY,'start');
 			this.bg.anchor.setTo(0.5);
+			this.bg.scale.setTo(0.73,0.6);
 			game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
-			this.gameTitle=game.add.image(game.world.centerX-550,game.world.centerY-200,'gameTitle')
-			var playBtn=game.add.image(game.world.centerX,game.world.centerY,'spaceCraft');
-			playBtn.scale.setTo(0.5)
-			playBtn.anchor.setTo(0.5,0.2);
-			playBtn.inputEnabled=true;
-			playBtn.input.useHandCursor=true;
-			var playText=game.add.text(-140,350,"Click here to play",{font:"40px Arial",fill:"#8e99d8"})
-			playBtn.addChild(playText)
-			playBtn.events.onInputDown.add(function(){
-				game.state.add('playState',playState);
-				game.state.start('playState');
-			},this);
+
+			var sound=game.add.audio('startTrack');
+			sound.loop=true;
+			sound.play();
+
+			this.startButton=game.add.button(game.world.centerX-100,game.world.centerY-200,'startButton',this.startGame,this);
+			this.startButton.inputEnabled=true;
+			this.startButton.onInputOver.add(this.imageOver,this);
+			this.startButton.onInputOut.add(this.imageOut,this);
+
+			this.highScoreButton=game.add.button(game.world.centerX-170,game.world.centerY-80,'highScoreButton',this.showHighScore,this);
+			this.highScoreButton.inputEnabled=true;
+			this.highScoreButton.onInputOver.add(this.imageOver,this);
+			this.highScoreButton.onInputOut.add(this.imageOut,this);
+
+			this.howToPlayButton=game.add.button(game.world.centerX-200,game.world.centerY+40,'howToButton',this.showInstruction,this);
+			this.howToPlayButton.inputEnabled=true;
+			this.howToPlayButton.onInputOver.add(this.imageOver,this);
+			this.howToPlayButton.onInputOut.add(this.imageOut,this);
+
+			this.crossButton=game.add.button(game.world.width-100,20,'cross',this.exitGame,this);
+			this.crossButton.inputEnabled=true;
+			this.crossButton.onInputOver.add(this.imageOver,this);
+			this.crossButton.onInputOut.add(this.imageOut,this);
+
+			// this.startButton=new Phaser.Button(game);
+			// this.startButton.x=game.world.centerX-30;
+			// this.startButton.y=game.world.centerY-100;
+			// this.startButton.key='startButton';
+			// this.startButton.callback=this.startGame();
+			// this.highScoreButton=game.add.button(game.world.centerX-30,game.world.centerY,'highScoreButton','showScores',this,'','','','');
+			// this.howToButton=game.add.button(game.world.centerX-30,game.world.centerY+100,'howToButton','showInstruction',this,'','','','');
+			// sound.autoplay(true);
+			// this.gameTitle=game.add.image(game.world.centerX-550,game.world.centerY-200,'gameTitle')
+			// var playBtn=game.add.image(game.world.centerX,game.world.centerY,'spaceCraft');
+			// playBtn.scale.setTo(0.5)
+			// playBtn.anchor.setTo(0.5,0.2);
+			// playBtn.inputEnabled=true;
+			// playBtn.input.useHandCursor=true;
+			// var playText=game.add.text(-140,350,"Click here to play",{font:"40px Arial",fill:"#8e99d8"})
+			// playBtn.addChild(playText)
+			// playBtn.events.onInputDown.add(function(){
+			// 	game.state.add('playState',playState);
+			// 	game.state.start('playState');
+			// },this);
 		},
 		update : function(){
 		},
-
+		startGame:function(){
+			console.log("start");
+		},
+		imageOver:function(button){
+			button.scale.setTo(1.1);
+		},
+		imageOut:function(button){
+			button.scale.setTo(1);
+		},
+		showHighScore:function(){
+			console.log("show highscores");
+		},
+		showInstruction:function(){
+			console.log("how to play");
+		},
+		exitGame:function(){
+			console.log("exit game");
+			game.destroy();
+		},
 	};
-	game.state.add("playState",playState);
-	game.state.start("playState");
+	game.state.add("homeState",homeState);
+	game.state.start("homeState");
 })();

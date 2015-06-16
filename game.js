@@ -1,142 +1,84 @@
 ;(function(){
-	var game=new Phaser.Game("100","100",Phaser.AUTO);
+	var game=new Phaser.Game(1380,630,Phaser.AUTO);
 	var playState={
 		preload : function(){
-			game.load.image('space','images/space.jpg');
-			game.load.image('red-dot','images/red-dot.png');
-			game.load.image('blue-dot','images/blue-dot.png');
-			game.load.image('dark-blue-dot','images/dark-blue-dot.png');	
-			game.load.image('green-dot','images/green-dot.png');	
-			game.load.image('pointer','images/pointer.png');
-			game.load.image('fireblob','images/fireblob.png');
+			game.load.image('game-bg','images/game-bg-1.png');
+			game.load.image('bee-1','images/bee-4.png');
+			game.load.image('flower','images/flower.png');
+			game.load.audio('buzz','audio/bee.mp3');
 		},
 		create : function(){
-			this.formerMouse=-1; // Phaser.Mouse.NO_BUTTON
-
+			this.BEE_LAUNCH_INTERVAL=1000;
+			this.ENEMY_LAUNCH_INTERVAL=400;
+			this.LAUNCH_TIME=0;
+			this.BEE_POPULATION=0;
 			game.world.setBounds(0,0,game.world.width,game.world.height);
-			game.physics.startSystem(Phaser.Physics.P2JS);
-			game.physics.p2.setImpactEvents(true);
-  			game.physics.p2.gravity.y = 0;
-  			game.physics.p2.restitution = 0.8;
-  			this.particleCollisionGroup=game.physics.p2.createCollisionGroup();
-  			this.pointerCG=game.physics.p2.createCollisionGroup();
-  			game.physics.p2.updateBoundsCollisionGroup();
+			game.physics.startSystem(Phaser.Physics.ARCADE);
 
-  			this.bg=game.add.image(0,0,'space');
+  			this.bg=game.add.image(0,0,'game-bg');
+  			this.bg.scale.setTo(0.75,0.55);
 
-  			this.pointer=game.add.sprite(game.world.centerX,game.world.centerY,'pointer');
-  			game.physics.p2.enable(this.pointer,false);
-  			this.pointer.scale.setTo(0.5);
+  			this.flower=game.add.sprite(game.world.centerX,game.world.centerY+180,'flower');
+  			this.flower.scale.setTo(0.2);
+  			game.physics.arcade.enable(this.flower);
+  			this.flower.body.gravity.y=350;
+  			this.flower.body.collideWorldBounds=true;
 
-			this.particleGroup=game.add.group(game,null,"particleGroup",true,true,Phaser.Physics.P2JS);
-			
-			this.particleGroup.createMultiple(10,'dark-blue-dot');
-			this.particleGroup.setAll('checkWorldBounds',true);
-			// this.particleGroup.setAll('outOfBoundsKill',true);
-			this.pointer.body.setCollisionGroup(this.pointerCG);
-  			// this.pointer.body.collides(this.particleCollisionGroup,this.particlePointCollisionHandler,this);
+  			this.cursorKeys= game.input.keyboard.createCursorKeys();
 
-
-  			this.emitter = game.add.emitter(this.pointer.x,this.pointer.y, 9000);
- 			this.emitter.makeParticles('fireblob');
- 			this.pointer.addChild(this.emitter);
- 			this.emitter.setAlpha(0.7,0.7);
- 			this.emitter.y = 0;
-  			this.emitter.x = 0;
-  			this.emitter.lifespan = 500;
-
-  			// this.halo=Phaser.Circle(this.pointer.x,this.pointer.y,50);
-
-  			this.collectedParticles=game.add.group();
-  			this.collectedParticles.enableBody=true;
-  			game.physics.p2.enable(this.collectedParticles,false);
-  			
-			this.createParticles();
+  			this.beeGroup=game.add.group();
+  			this.beeGroup.enableBody=true;
+  			this.enemyGroup=game.add.group();
+		},
+		jump:function(){
+			this.flower.body.velocity.y=-100;
+			this.flower.body.acceleration.y=-20;
 		},
 		update : function(){
-			if(game.physics.arcade.distanceToPointer(this.pointer, game.input.activePointer) > 30){
-				game.physics.arcade.moveToPointer(this.pointer,2500);
-			}
-			else{
-				this.pointer.body.velocity.x=0;
-				this.pointer.body.velocity.y=0;
-			}
-			if(game.input.mouse.button!=-1 && game.input.mouse.button==0){
-				//Phaser.Mouse.LEFT_CLICK
-				this.emitter.emitParticle();
-			}
-			if(game.input.mouse.button!=-1 && game.input.mouse.button==2){
-				//Phaser.Mouse.RIGHT_CLICK
-			}
-			if(game.input.mouse.button!=-1 && game.input.mouse.button==1){
-				//Phaser.Mouse.MIDDLE_CLICK
-				this.collectParticles();
-			}
-			// game.physics.
-		},
-		collectParticles:function(){	
-			var mousePoint=new Phaser.Point(this.pointer.x,this.pointer.y);
 
-			for(var i=0;i<10;i++){
-				var singleParticle=this.particleGroup.getAt(game.rnd.integerInRange(0,this.particleGroup.length-1));
-				if(singleParticle){
-					var particlePoint=new Phaser.Point(singleParticle.x,singleParticle.y);
-					var angle=Phaser.Point.angle(mousePoint,particlePoint);
-					singleParticle.angle=angle;
-					// singleParticle.body.angularVelocity=25;
-					console.log(Math.cos(angle),Math.sin(angle));
-					singleParticle.body.velocity.x=2*singleParticle.body.velocity.x * Math.cos(angle);
-					singleParticle.body.velocity.y=2*singleParticle.body.velocity.y * Math.sin(angle);
-					// console.log(singleParticle.body.velocity.x,singleParticle.body.velocity.y,angle);
-					// singleParticle.body.acceleration.x=100*Math.cos(angle);
-					// singleParticle.body.acceleration.y=100*Math.sin(angle);
-				}
+			//move flower to left/right
+			if(this.cursorKeys.left.isDown){
+				this.flower.x-=10;
+				// this.flower.body.acceleration.x-=50;
 			}
-		},
-		particlePointCollisionHandler:function(pointer,particle){
-				// this.collectedParticles.add(particle);
-				// this.particleGroup.remove(particle);
-				// console.log(this.collectedParticles.length);
-		},
-		render:function(){
-			// game.debug.cameraInfo(game.camera, 500, 32);
-   // 			game.debug.spriteCoords(this.spaceShip, 32, 32);
-   			// game.debug.geom(this.halo,#fff,true);
-		},
-		createParticles:function(){
+			if(this.cursorKeys.right.isDown){
+				this.flower.x+=10;
+				// this.flower.body.acceleration.x+=50;
+			}
+			if(this.cursorKeys.up.isDown){
+				this.flower.body.velocity.y=-250;
+			}
+			if(this.cursorKeys.down.isDown){
+				this.flower.body.velocity.y=50;
+				this.flower.y+=20;
+			}
 
-			for(var i=0;i<this.particleGroup.length;i++){
-				var singleParticle=this.particleGroup.getFirstExists(false);
-				if(singleParticle){
-					// singleParticle.scale.setTo(0.5);
-					singleParticle.reset(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,game.height));
-					game.physics.p2.enable(singleParticle, false);
-					singleParticle.body.velocity.x=game.rnd.integerInRange(-5,5);
-					singleParticle.body.velocity.y=game.rnd.integerInRange(-5,5);
-					// singleParticle.body.bounce.setTo(1);
-					// singleParticle.physicsBodyType=Phaser.Physics.P2JS;
-					singleParticle.body.collideWorldBounds=true;
-					// singleParticle.body.collides(enemyGroup,dieEnemy,this);
-					singleParticle.body.setCollisionGroup(this.particleCollisionGroup);	
-					singleParticle.body.collides(this.particleCollisionGroup);
-					singleParticle.body.collides(this.pointerCG,this.particlePointCollisionHandler(),singleParticle);
-				}
+			if(game.time.now > this.LAUNCH_TIME+this.BEE_LAUNCH_INTERVAL && this.BEE_POPULATION<=10){
+				this.launchBee();
+				this.LAUNCH_TIME=game.time.now+this.BEE_LAUNCH_INTERVAL;
 			}
+			this.updateBeeMotion();
+
 		},
-		rotate:function(){
-			this.spaceShip.body.rotation = game.physics.arcade.angleToPointer(this.spaceShip)+Math.PI/2;
+		updateBeeMotion:function(){
+			this.beeGroup.forEachAlive(function(bee){
+				bee.period+=0.05;
+				bee.body.velocity.x=Math.cos(bee.period)*100;
+				bee.body.velocity.y=Math.sin(bee.period)*60;
+			});
 		},
-		launchEnemy:function(){
-			var enemy=this.aliens.getFirstExists(false);
-			if(enemy){
-				enemy.scale.setTo(0.05);
-				enemy.reset(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,game.height));
-				enemy.angle=this.spaceShip.angle;
-				var enemyPoint=new Phaser.Point(enemy.x,enemy.y);
-				var enemyShipAngle=Phaser.Point.angle(enemyPoint,this.getShipPoint());
-				enemy.body.velocity.x=-this.ENEMY_SPEED*Math.cos(enemyShipAngle);
-				enemy.body.velocity.y=-this.ENEMY_SPEED*Math.sin(enemyShipAngle);
-			}
+		launchBee:function(){
+			this.bee=game.add.sprite(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,150),'bee-1');
+			this.beeGroup.add(this.bee);
+			this.BEE_POPULATION+=1;
+			this.bee.scale.setTo(0.2);
+			this.bee.body.velocity.x=game.rnd.integerInRange(-150,150);
+			this.bee.body.collideWorldBounds=true;
+			this.bee.body.gravity.y=1000;
+			this.bee.audio=game.add.audio('buzz');
+			this.bee.audio.loop=true;
+			this.bee.period=0;
+			// this.bee.audio.play();
 		},
 		shootBullets:function(){
 			if(game.time.now>this.fireTime){
@@ -169,20 +111,6 @@
 				}
 			}
 		},
-		updateEnemyShip:function(){
-				this.aliens.forEachAlive(function(enemy){
-				var enemyPoint=new Phaser.Point(enemy.x,enemy.y);
-				var enemyShipAngle=Phaser.Point.angle(enemyPoint,this.getShipPoint());
-				enemy.angle=enemyShipAngle;
-				enemy.body.velocity.x=-this.ENEMY_SPEED*Math.cos(enemyShipAngle);
-				enemy.body.velocity.y=-this.ENEMY_SPEED*Math.sin(enemyShipAngle);
-			},this);
-		},
-		getShipPoint:function(){
-  			var shipPoint=new Phaser.Point(this.spaceShip.x,this.spaceShip.y);
-  			return shipPoint;
-		},
-
 	};
 	var homeState={
 		preload : function(){
@@ -194,7 +122,6 @@
 			game.load.image('cross','images/cross.png');
 		},
 		create : function(){
-			// game.stage.backgroundColor='#cccccc';
 			this.bg=game.add.image(game.world.centerX, game.world.centerY,'start');
 			this.bg.anchor.setTo(0.5);
 			this.bg.scale.setTo(0.73,0.6);
@@ -202,7 +129,7 @@
 
 			var sound=game.add.audio('startTrack');
 			sound.loop=true;
-			sound.play();
+			// sound.play();
 
 			this.startButton=game.add.button(game.world.centerX-100,game.world.centerY-200,'startButton',this.startGame,this);
 			this.startButton.inputEnabled=true;
@@ -223,32 +150,12 @@
 			this.crossButton.inputEnabled=true;
 			this.crossButton.onInputOver.add(this.imageOver,this);
 			this.crossButton.onInputOut.add(this.imageOut,this);
-
-			// this.startButton=new Phaser.Button(game);
-			// this.startButton.x=game.world.centerX-30;
-			// this.startButton.y=game.world.centerY-100;
-			// this.startButton.key='startButton';
-			// this.startButton.callback=this.startGame();
-			// this.highScoreButton=game.add.button(game.world.centerX-30,game.world.centerY,'highScoreButton','showScores',this,'','','','');
-			// this.howToButton=game.add.button(game.world.centerX-30,game.world.centerY+100,'howToButton','showInstruction',this,'','','','');
-			// sound.autoplay(true);
-			// this.gameTitle=game.add.image(game.world.centerX-550,game.world.centerY-200,'gameTitle')
-			// var playBtn=game.add.image(game.world.centerX,game.world.centerY,'spaceCraft');
-			// playBtn.scale.setTo(0.5)
-			// playBtn.anchor.setTo(0.5,0.2);
-			// playBtn.inputEnabled=true;
-			// playBtn.input.useHandCursor=true;
-			// var playText=game.add.text(-140,350,"Click here to play",{font:"40px Arial",fill:"#8e99d8"})
-			// playBtn.addChild(playText)
-			// playBtn.events.onInputDown.add(function(){
-			// 	game.state.add('playState',playState);
-			// 	game.state.start('playState');
-			// },this);
 		},
 		update : function(){
 		},
 		startGame:function(){
-			console.log("start");
+			game.state.add('playState',playState);
+			game.state.start('playState');
 		},
 		imageOver:function(button){
 			button.scale.setTo(1.1);
@@ -263,7 +170,6 @@
 			console.log("how to play");
 		},
 		exitGame:function(){
-			console.log("exit game");
 			game.destroy();
 		},
 	};

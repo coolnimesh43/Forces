@@ -8,10 +8,12 @@
 			game.load.audio('buzz','audio/bee.mp3');
 		},
 		create : function(){
-			this.BEE_LAUNCH_INTERVAL=1000;
-			this.ENEMY_LAUNCH_INTERVAL=400;
+			this.BEE_LAUNCH_INTERVAL=500;
+			this.ENEMY_LAUNCH_INTERVAL=500;
 			this.LAUNCH_TIME=0;
 			this.BEE_POPULATION=0;
+			this.TOTAL_POWER=0;
+
 			game.world.setBounds(0,0,game.world.width,game.world.height);
 			game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -19,7 +21,7 @@
   			this.bg.scale.setTo(0.75,0.55);
 
   			this.flower=game.add.sprite(game.world.centerX,game.world.centerY+180,'flower');
-  			this.flower.scale.setTo(0.2);
+  			this.flower.scale.setTo(0.15);
   			game.physics.arcade.enable(this.flower);
   			this.flower.body.gravity.y=350;
   			this.flower.body.collideWorldBounds=true;
@@ -39,15 +41,15 @@
 			//move flower to left/right
 			if(this.cursorKeys.left.isDown){
 				this.flower.x-=10;
-				// this.flower.body.acceleration.x-=50;
 			}
 			if(this.cursorKeys.right.isDown){
 				this.flower.x+=10;
-				// this.flower.body.acceleration.x+=50;
 			}
+			//jump 
 			if(this.cursorKeys.up.isDown){
 				this.flower.body.velocity.y=-250;
 			}
+			//escalate
 			if(this.cursorKeys.down.isDown){
 				this.flower.body.velocity.y=50;
 				this.flower.y+=20;
@@ -58,7 +60,19 @@
 				this.LAUNCH_TIME=game.time.now+this.BEE_LAUNCH_INTERVAL;
 			}
 			this.updateBeeMotion();
-
+			this.checkLowerBound();
+			this.checkCollision();
+		},
+		checkLowerBound:function(){
+			this.beeGroup.forEachAlive(function (bee){
+				if(bee.y+bee.height>=game.height){
+					bee.kill();
+					this.BEE_POPULATION-=1;
+				}
+			});
+		},
+		checkCollision:function(){
+			game.physics.arcade.overlap(this.flower,this.beeGroup,this.updatePower,null,this);
 		},
 		updateBeeMotion:function(){
 			this.beeGroup.forEachAlive(function(bee){
@@ -71,7 +85,7 @@
 			this.bee=game.add.sprite(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,150),'bee-1');
 			this.beeGroup.add(this.bee);
 			this.BEE_POPULATION+=1;
-			this.bee.scale.setTo(0.2);
+			this.bee.scale.setTo(0.1);
 			this.bee.body.velocity.x=game.rnd.integerInRange(-150,150);
 			this.bee.body.collideWorldBounds=true;
 			this.bee.body.gravity.y=1000;
@@ -79,6 +93,11 @@
 			this.bee.audio.loop=true;
 			this.bee.period=0;
 			// this.bee.audio.play();
+		},
+		updatePower:function(flower,bee){
+			this.TOTAL_POWER+=1;
+			this.BEE_POPULATION-=1;
+			bee.kill();
 		},
 		shootBullets:function(){
 			if(game.time.now>this.fireTime){

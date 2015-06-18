@@ -76,6 +76,7 @@
 			game.load.image('flower','images/flower.png');
 			game.load.image('hornet','images/angry-hornet.png');
 			game.load.image('bullet','images/bullet-4.png');
+			game.load.image('power-1','images/power-1.png');
 			game.load.audio('buzz','audio/bee.mp3');
 			game.load.audio('wasp-buzz','audio/wasp.mp3');
 		},
@@ -91,6 +92,12 @@
 			this.NEXT_BULLET_INTERVAL=500;
 			this.SHOOT_BULLET_TIME=0;
 			this.score=0;
+			this.BEE_POPULATION_LIMIT=10;
+			this.HORNET_POPULATION_LIMIT=10;
+			this.checkPowerCollision=false;
+			this.checkBulletBeeCollision=true;
+			this.bulletScale=0.1;
+			this.bulletType=1;
 
 			game.world.setBounds(0,0,game.world.width,game.world.height);
 			game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -98,13 +105,14 @@
   			this.bg=game.add.image(0,0,'game-bg');
   			this.bg.scale.setTo(0.75,0.55);
 
-  			this.scoreText=game.add.text(50,16,'Score: '+this.score, {fontSize:'20px',fill:'#CCFF66'});
-  			this.bulletText=game.add.text(200,16,'Bullets: '+this.TOTAL_POWER,{fontSize:'20px',fill:'#CCFF66',fontWeight:'bold'});
+  			// this.scoreText=game.add.text(50,16,'Score: '+this.score, {font:'24px digital',fill:'#7C0A02'});
+  			// this.bulletText=game.add.text(200,16,'Bullets: '+this.TOTAL_POWER,{font:'24px digital',fill:'#7C0A02'});
+  			// this.timerText=game.add.text(300,16,'Time : '+game.time.totalElapsedSeconds(),{font:'24px digital',fill:'#7C0A02'});
 
   			this.flower=game.add.sprite(game.world.centerX,game.world.centerY+180,'flower');
   			this.flower.scale.setTo(0.1);
   			this.flower.anchor.setTo(0.5,0.75);
-  			game.physics.arcade.enable(this.flower,true);
+  			game.physics.arcade.enable(this.flower);
   			this.flower.body.gravity.y=350;
   			this.flower.body.collideWorldBounds=true;
 
@@ -127,10 +135,14 @@
 
   			this.updateHornetGenerator=game.time.events.loop(Phaser.Timer.SECOND/4,this.updateHornetMotion,this);
   			this.updateHornetGenerator.timer.start();
+
+  			this.gamePlayTime=game.time.events.loop(Phaser.Timer.SECOND*10,this.checkAndUpdateGamePlay,this);
+			this.gamePlayTime.timer.start();
 		},
-		updateScore:function(){
-			this.scoreText.text="Score: "+this.score;
-			this.bulletText.text="Bullets: "+this.TOTAL_POWER;
+		render:function(){
+			game.debug.text('Score: '+this.score ,50,20,'#7C0A02','24px digital');
+			game.debug.text('Bullets: '+this.TOTAL_POWER ,200,20,'#7C0A02','24px digital');
+			game.debug.text('Time: '+game.time.totalElapsedSeconds() ,350,20,'#7C0A02','24px digital');
 		},
 		jump:function(){
 			this.flower.body.velocity.y=-100;
@@ -160,18 +172,40 @@
 				this.shootBullets();
 			}
 
-			if(game.time.now > this.BEE_LAUNCH_TIME+this.BEE_LAUNCH_INTERVAL && this.BEE_POPULATION <=20){
+			if(game.time.now > this.BEE_LAUNCH_TIME+this.BEE_LAUNCH_INTERVAL && this.BEE_POPULATION <=this.BEE_POPULATION_LIMIT){
 				this.launchBee();
 				this.BEE_LAUNCH_TIME=game.time.now+this.BEE_LAUNCH_INTERVAL;
 			}
-			if(game.time.now > this.HORNET_LAUNCH_TIME+this.HORNET_LAUNCH_INTERVAL && this.HORNET_POPULATION <=25){
+			if(game.time.now > this.HORNET_LAUNCH_TIME+this.HORNET_LAUNCH_INTERVAL && this.HORNET_POPULATION <=this.HORNET_POPULATION_LIMIT){
 				this.launchHornet();
 				this.HORNET_LAUNCH_TIME=game.time.now+this.HORNET_LAUNCH_INTERVAL;
 			}
 			this.updateBeeMotion();
 			this.updateHornetCircularMotion();
 			this.checkLowerBound();
-			
+
+		},
+		checkAndUpdateGamePlay:function(){
+			// if(game.time.totalElapsedSeconds() >=20){
+				console.log("30 seconds has passed.");
+				this.BEE_POPULATION_LIMIT+=3;
+				this.HORNET_POPULATION_LIMIT+=3;
+				if(!this.currentPower){
+					this.addPower();
+				}
+				
+			// }
+		},
+		addPower:function(){
+			console.log("adding power");
+			// if(this.TOTAL_POWER>=10){
+				this.currentPower=game.add.sprite(game.rnd.integerInRange(0,game.width),10,'power-1');
+				game.physics.arcade.enable(this.currentPower);
+				this.currentPower.scale.setTo(0.2);
+				this.currentPower.body.velocity.x=game.rnd.integerInRange(-50,50);
+				this.currentPower.body.gravity.y=40;
+				this.checkPowerCollision=true;
+			// }
 		},
 		checkLowerBound:function(){
 			var kill=0;
@@ -190,7 +224,20 @@
 			game.physics.arcade.collide(this.hornetGroup,this.flower,this.deathHandler,null,this);
 			game.physics.arcade.overlap(this.flower,this.beeGroup,this.updatePower,null,this);
 			game.physics.arcade.overlap(this.bulletGroup,this.hornetGroup,this.hits,null,this);
-			game.physics.arcade.overlap(this.bulletGroup,this.beeGroup,this.handleBeeDeath,null,this);
+			if(this.checkBulletBeeCollision){
+				game.physics.arcade.overlap(this.bulletGroup,this.beeGroup,this.handleBeeDeath,null,this);
+			}
+			if(this.checkPowerCollision){
+				game.physics.arcade.overlap(this.flower,this.currentPower,this.powerUp,null,this);
+			}
+		},
+		powerUp:function(){
+			if(this.bulletType==1){
+				this.bulletScale*=3;
+			}
+			this.currentPower.kill();
+			this.checkBulletBeeCollision=false;
+			this.checkPowerCollision=false;
 		},
 		updateBeeMotion:function(){
 			this.beeGroup.forEachAlive(function(bee){
@@ -216,29 +263,33 @@
 				hornet.body.velocity.y=500*Math.sin(angle);
 			});
 		},
-		deathHandler:function(hornet,flower){
+		deathHandler:function(flower,hornet){
+			console.log(this.TOTAL_POWER);
 			if(this.TOTAL_POWER<=0){
+				console.log("power is insufficient. killing game.");
 				flower.kill();
 				hornet.kill();
-				this.HORNET_POPULATION-=1;
 				totalScore=this.score;
 				// show gameover screen and score.
 				game.state.add('finishState',finishState);
 				game.state.start('finishState');
 			}
 			else{
+				console.log("setting power to 0");
 				this.TOTAL_POWER=0;
+				this.HORNET_POPULATION-=1;
+				this.bulletScale=0.1;
+				hornet.kill();
 			}
 		},
 		hits:function(bullet,hornet){
 			this.score+=10;
 			hornet.kill();
-			this.updateScore();
+			this.HORNET_POPULATION-=1;
 		},
 		handleBeeDeath:function(bullet,bee){
 			bee.kill();
 			this.score-=5;
-			this.updateScore();
 		},
 		getMousePointerPoint:function(){
 			var mousePoint=new Phaser.Point(game.input.mousePointer.x,game.input.mousePointer.y);
@@ -260,6 +311,7 @@
 			this.beeGroup.add(bee);
 			this.BEE_POPULATION+=1;
 			bee.scale.setTo(0.1);
+			game.physics.arcade.enable(bee);
 			bee.body.velocity.x=game.rnd.integerInRange(-150,150);
 			bee.body.collideWorldBounds=true;
 			bee.body.gravity.y=1500;
@@ -273,6 +325,7 @@
 			var hornet=game.add.sprite(game.rnd.integerInRange(0,game.width),game.rnd.integerInRange(0,150),'hornet');
 			this.hornetGroup.add(hornet);
 			hornet.scale.setTo(0.5);
+			game.physics.arcade.enable(hornet);
 			hornet.body.velocity.x=game.rnd.integerInRange(-50,50);
 			hornet.body.collideWorldBounds=true;
 			hornet.body.bounce.setTo(0.5);
@@ -289,7 +342,6 @@
 			this.BEE_POPULATION-=1;
 			this.score+=5;
 			bee.kill();
-			this.updateScore();
 		},
 		shootBullets:function(){
 			if(game.time.now>this.SHOOT_BULLET_TIME){
@@ -300,7 +352,7 @@
 					bullet.angle=angle;
 					bullet.body.velocity.x=800*Math.cos(angle);
 					bullet.body.velocity.y=800*Math.sin(angle);
-					bullet.scale.setTo(0.1);
+					bullet.scale.setTo(this.bulletScale);
 					this.TOTAL_POWER-=1;
 					this.SHOOT_BULLET_TIME=game.time.now+this.NEXT_BULLET_INTERVAL;
 				}

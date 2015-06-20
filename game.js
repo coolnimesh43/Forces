@@ -62,7 +62,7 @@
 		},
 		exitGame:function(){
 			game.destroy();
-		},
+		}
 	};
 	game.state.add("homeState",homeState);
 	game.state.start("homeState");
@@ -138,6 +138,7 @@
 
   			this.gamePlayTime=game.time.events.loop(Phaser.Timer.SECOND*10,this.checkAndUpdateGamePlay,this);
 			this.gamePlayTime.timer.start();
+			game.time.reset();
 		},
 		render:function(){
 			game.debug.text('Score: '+this.score ,50,20,'#7C0A02','24px digital');
@@ -357,7 +358,7 @@
 					this.SHOOT_BULLET_TIME=game.time.now+this.NEXT_BULLET_INTERVAL;
 				}
 			}
-		},
+		}
 	};
 	var finishState={
 		preload:function(){
@@ -369,18 +370,15 @@
 			this.bg.anchor.setTo(0.5);
 			this.bg.scale.setTo(0.73,0.6);
 			game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
-
 			game.add.text(game.world.centerX-50,game.world.centerY-100,"Game Over",{fontSize:'32px',fill:'#FFFFCC',fontWeight:'bold'});
 			game.add.text(game.world.centerX-100,game.world.centerY,"Your Score is "+totalScore,{fontSize:'32px',fill:'#FFFFCC',fontWeight:'bold'});
-
 			this.playAgainButton=game.add.button(game.world.centerX-100,game.world.centerY+100,'play-again',this.startGame,this);
 			this.playAgainButton.scale.setTo(0.75);
 			this.playAgainButton.inputEnabled=true;
-			this.playAgainButton.onInputOver.add(this.imageOver,this);
-			this.playAgainButton.onInputOut.add(this.imageOut,this);
 		},
 		startGame:function(){
+			game.state.add("playState",playState);
 			game.state.start('playState');
-		},
+		}
 	}
 })();

@@ -6,8 +6,6 @@
 
   Forces is a fun, no-brainer game intended for a quality passtime. 
   
-  ScreenShots
-  
   Technologies Used
   -----------
    

@@ -6,9 +6,9 @@
 
   Forces is a fun, no-brainer game intended for a quality passtime. 
   
-  Play : coolnimesh43.github.io/Forces 
+  Play : http://coolnimesh43.github.io/Forces 
   
-  Technologies Used
+  Technologies Usedt
   -----------
    
     - Phaser http://phaser.io/

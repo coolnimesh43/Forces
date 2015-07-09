@@ -6,6 +6,8 @@
 
   Forces is a fun, no-brainer game intended for a quality passtime. 
   
+  Play : coolnimesh43.github.io/Forces 
+  
   Technologies Used
   -----------
    

@@ -4,7 +4,10 @@
 <head>
 	<title>
 		Game
-	</title>	
+	</title>
+	<script src="jquery.js"></script>
+	<script type="text/javascript" src="googleAuth.js"></script>
+	<script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
 </head>
 <body>
 	<style type="text/css">
@@ -13,6 +16,16 @@
 			src:url(font/digital-7.ttf);
 		}
 	</style>
+	<button id="authorize-button" style="visibility: hidden">Authorize</button>
+	<form name="gamescore" id="gamescore" method="post" onsubmit="return false;">
+		<input type="hidden" name="game_id" id="game_id" value="1" />
+		<input type="hidden" name="email" id="email"  />
+		<input type="hidden" name="google_id" id="google_id" />
+		<input type="hidden" name="google_name" id="google_name" />
+		<input type="hidden" name="profile_url" id="profile_url" />
+		<input type="hidden" name="profile_image_url" id="profile_image_url" />
+		<input type="hidden" name="score" id="score" />
+	</form>
 	<script type="text/javascript" src="phaser.js"></script>
 	<script type="text/javascript" src="game.js"></script>
 </body>

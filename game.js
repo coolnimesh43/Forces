@@ -1,5 +1,5 @@
 ;(function(){
-	var game=new Phaser.Game(1380,630,Phaser.AUTO);
+	var game=new Phaser.Game(600,400,Phaser.AUTO);
 	var totalScore=0;
 	//start of game from home state
 	var homeState={
